@@ -41,23 +41,16 @@
 
 
 //Pin assignments
-const int ciHeartbeatLED = 2;
-const int ciPB1 = 27;     
-const int ciPB2 = 26;      
-const int ciPot1 = A4;    //GPIO 32  - when JP2 has jumper installed Analog pin AD4 is connected to Poteniometer R1
-const int ciLimitSwitch = 26;
-const int ciIRDetector = 16;
+const int ciPB1 = 27;
 const int ciMotorLeftA = 4;
 const int ciMotorLeftB = 18;
 const int ciMotorRightA = 19;
 const int ciMotorRightB = 12;
 const int ciEncoderLeftA = 17;
-const int ciEncoderLeftB = 5;
+const int ciEncoderLeftB = 16;
 const int ciEncoderRightA = 14;
 const int ciEncoderRightB = 13;
 const int ciSmartLED = 25;
-const int ciStepperMotorDir = 22;
-const int ciStepperMotorStep = 21;
 const int servoPin = 15;
 const int servoChannel = 7;
 
@@ -78,7 +71,6 @@ volatile uint32_t vui32test2;
 void loopWEBServerButtonresponce(void);
 
 unsigned char CR1_ucMainTimerCaseCore1;
-uint8_t CR1_ui8LimitSwitch;
 
 uint8_t CR1_ui8IRDatum;
 uint8_t CR1_ui8WheelSpeed;
@@ -92,9 +84,6 @@ uint32_t CR1_u32Avg;
 
 unsigned long CR1_ulLastDebounceTime;
 unsigned long CR1_ulLastByteTime;
-
-//volatile int32_t ENC_vi32LeftOdometer;
-//volatile int32_t ENC_vi32RightOdometer;
 
 unsigned long CR1_ulMainTimerPrevious;
 unsigned long CR1_ulMainTimerNow;
@@ -146,7 +135,7 @@ long dutyCycle = map(deg, 0, 180, minDutyCycle, maxDutyCycle);
 
 void setup(){
    Serial.begin(115200); 
-   Serial2.begin(2400, SERIAL_8N1, ciIRDetector);  // IRDetector on RX2 receiving 8-bit words at 2400 baud
+   //Serial2.begin(2400, SERIAL_8N1, ciIRDetector);  // IRDetector on RX2 receiving 8-bit words at 2400 baud
    
    Core_ZEROInit();
 
@@ -167,10 +156,8 @@ void setup(){
    WDT_ResetCore1(); 
 
    setupMotion();
-   
-   pinMode(ciHeartbeatLED, OUTPUT);
+
    pinMode(ciPB1, INPUT_PULLUP);
-   pinMode(ciLimitSwitch, INPUT_PULLUP);
 
    SmartLEDs.begin();
    SmartLEDs.clear();
@@ -218,7 +205,7 @@ void loop(){
   }
   iLastButtonState = iButtonValue; //store button state
 
- if (Serial2.available() > 0) {               // check for incoming data
+/* if (Serial2.available() > 0) {               // check for incoming data
     CR1_ui8IRDatum = Serial2.read();          // read the incoming byte
 // Serial.println(iIncomingByte, HEX);        // uncomment to output received character
     CR1_ulLastByteTime = millis();            // capture time last byte was received
@@ -229,7 +216,7 @@ void loop(){
     if (millis() - CR1_ulLastByteTime > CR1_clReadTimeout) {
       CR1_ui8IRDatum = 0;                     // if so, clear incoming byte
     }
- }
+ } */
  
   CR1_ulMainTimerNow = micros();
   
@@ -387,24 +374,6 @@ void loop(){
               ledcWrite(3,255);
               ucMotorStateIndex = 9;
             }
-      //if(CR1_ui8IRDatum == 0x41 && ucMotorStateIndex == 9){
-              //ledcWrite(2,255);
-              //ledcWrite(1,255);
-              //ledcWrite(4,255);
-              //ledcWrite(3,255);
-              //ucMotorStateIndex = 10;
-            //}
-
-         
-        if(!digitalRead(ciLimitSwitch))
-        {
-          ledcWrite(2,255);
-          ledcWrite(1,255);
-          ledcWrite(4,255);
-          ledcWrite(3,255);
-          ucMotorStateIndex = 10;
-          Serial.println(digitalRead(ciLimitSwitch));
-        }
             
       CR1_ucMainTimerCaseCore1 = 2;
       break;
@@ -440,16 +409,6 @@ void loop(){
       CR1_ucMainTimerCaseCore1 = 0;
       break;
     }
- }
-
-  // Heartbeat LED
- CR1_ulHeartbeatTimerNow = millis();
- if(CR1_ulHeartbeatTimerNow - CR1_ulHeartbeatTimerPrevious >= CR1_ciHeartbeatInterval)
- {
-    CR1_ulHeartbeatTimerPrevious = CR1_ulHeartbeatTimerNow;
-    btHeartbeat = !btHeartbeat;
-    digitalWrite(ciHeartbeatLED, btHeartbeat);
-   // Serial.println((vui32test2 - vui32test1)* 3 );
  }
 
 }
