@@ -53,6 +53,8 @@ const int ciEncoderRightB = 13;
 const int ciSmartLED = 25;
 const int servoPin = 15;
 const int servoChannel = 7;
+const int windupwheelA = 2;
+const int windupwheelB = 5;
 
 volatile uint32_t vui32test1;
 volatile uint32_t vui32test2;
@@ -167,6 +169,11 @@ void setup(){
    ledcSetup(servoChannel, 50, 16);
 
    ucMotorStateIndex = 0;
+
+   ledcAttachPin(windupwheelA, 5); // assign Motors pins to channels
+   ledcAttachPin(windupwheelB, 6);
+   ledcSetup(5, 20000, 8); // 20mS PWM, 8-bit resolution
+   ledcSetup(6, 20000, 8);
 }
 
 void loop(){
