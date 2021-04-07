@@ -115,6 +115,14 @@ const long CR1_clDebounceDelay = 50;
 const long CR1_clReadTimeout = 220;
 const long totalMillis = 200;
 
+const int trigPin = 26; //Ultrasonic Sensor code
+int trigState = LOW;
+const int echoPin = 23;
+float duration;
+float distance;
+unsigned long UScurrentMillis;
+unsigned long USpreviousMillis = 0;
+
 // Declare our SK6812 SMART LED object:
 Adafruit_NeoPixel SmartLEDs(2, 25, NEO_GRB + NEO_KHZ400);
 // Argument 1 = Number of LEDs (pixels) in use
@@ -161,12 +169,16 @@ void setup(){
 
    pinMode(ciPB1, INPUT_PULLUP);
 
+   pinMode(trigPin, OUTPUT);
+   pinMode(echoPin, INPUT);
+
    SmartLEDs.begin();
    SmartLEDs.clear();
    SmartLEDs.show();
 
    ledcAttachPin(servoPin, servoChannel);
    ledcSetup(servoChannel, 50, 16);
+   ledcWrite(servoChannel, degreesToDutyCycle(180));
 
    ucMotorStateIndex = 0;
 
@@ -206,10 +218,39 @@ void loop(){
           ucMotorStateIndex = 0; 
           ucMotorState = 0;
           MoveTo(0, 0, 0);
+          trigState = LOW;
+          digitalWrite(trigPin,trigState);
+          distance = 0;
        }
      }
     }
   }
+  
+  if(ucMotorStateIndex == 9){
+       UScurrentMillis = millis();
+       if(UScurrentMillis - USpreviousMillis >= 1){
+        USpreviousMillis = UScurrentMillis;
+        if(trigState == LOW){
+          trigState = HIGH;
+        } else {
+          trigState = LOW;
+        }
+        digitalWrite(trigPin,trigState);
+       }
+       duration = pulseIn(echoPin, HIGH);
+       distance= duration*0.034/2;
+       
+       if(distance <=20){
+              ledcWrite(2,255);
+              ledcWrite(1,255);
+              ledcWrite(4,255);
+              ledcWrite(3,255);
+              trigState = LOW;
+              digitalWrite(trigPin,trigState);
+              ucMotorStateIndex = 10;
+            }
+       }
+       
   iLastButtonState = iButtonValue; //store button state
 
 /* if (Serial2.available() > 0) {               // check for incoming data
@@ -251,62 +292,62 @@ void loop(){
           }
           case 1: //go forward
           {
-            ENC_SetDistance(280, 300);
-            ucMotorState = 1;
+            ENC_SetDistance(180, 200);
+            ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 202;
+            CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 2;
             break;
           }
-          case 2: //turn left
+          case 2: //turn right
           {
-            ENC_SetDistance(69, 38);
-            ucMotorState = 2;
+            ENC_SetDistance(-30, 30);
+            ucMotorState = 3;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 201;
+            CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 3;
             break;
           }
           case 3: //go forward again
           {
-            ENC_SetDistance(195, 240);
-            ucMotorState = 1;
+            ENC_SetDistance(105, 120);
+            ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 202;
+            CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 4;
             break;
           }
-          case 4: //turn right
+          case 4: //turn left
           {
-            ENC_SetDistance(-14, 41);
-            ucMotorState = 3;
+            ENC_SetDistance(-30, 30);
+            ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 201;
+            CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 5;
             break;
           }
           case 5: //go forward again
           {
-            ENC_SetDistance(315, 300);
-            ucMotorState = 1;
+            ENC_SetDistance(180, 200);
+            ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 202;
-            ucMotorStateIndex = 6;
+            CR1_ui8RightWheelSpeed = 215;
+            ucMotorStateIndex = 0;
             break;
           }
-          case 6: //turn right again
+          case 6: //turn left again
           {
-            ENC_SetDistance(-16, 41);
-            ucMotorState = 3;
+            ENC_SetDistance(-30, 30);
+            ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 201;
+            CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 7;
             break;
           }
           case 7: //go forward again
           {
             ENC_SetDistance(470, 300);
-            ucMotorState = 1;
+            ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 202;
             ucMotorStateIndex = 8;
@@ -314,8 +355,8 @@ void loop(){
           }
           case 8: //look for beacon
           {
-            ENC_SetDistance(-5, 41);
-            ucMotorState = 3;
+            ENC_SetDistance(15, 15);
+            ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 201;
             break;
@@ -323,45 +364,15 @@ void loop(){
           case 9: //go to beacon
           {
             ENC_SetDistance(200, 200);
-            ucMotorState = 1;
+            ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 202;
             break;
           }
-          case 10: //go backwards
+          case 10: //drop wheel
           {
-            ENC_SetDistance(80, 20);
-            ucMotorState = 4;
-            CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 199;
+            ledcWrite(servoChannel, degreesToDutyCycle(70));
             ucMotorStateIndex = 11;
-            break;
-          }
-          case 11: //celebratory circle
-          {
-            ENC_SetDistance(200, 200);
-            ucMotorState = 2;
-            CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 200;
-            ucMotorStateIndex = 12;
-            break;
-          }
-          case 12: //raise flag
-          {
-            Position = 1;
-            servoPos = map(Position, 0, 2, 0, 180);
-            ledcWrite(servoChannel, degreesToDutyCycle(servoPos));
-            ucMotorStateIndex = 13;
-            Serial.println(servoPos);
-            break;
-          }
-          case 13: //lower flag
-          {
-            Position = 0;
-            servoPos = map(Position, 0, 2, 0, 180);
-            ledcWrite(servoChannel, degreesToDutyCycle(servoPos)); 
-            ucMotorStateIndex = 14;
-            Serial.println(servoPos);
             break;
           }
          }
