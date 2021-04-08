@@ -53,8 +53,7 @@ const int ciEncoderRightB = 13;
 const int ciSmartLED = 25;
 const int servoPin = 15;
 const int servoChannel = 7;
-const int windupwheelA = 2;
-const int windupwheelB = 5;
+const int windupwheel = 2;
 
 volatile uint32_t vui32test1;
 volatile uint32_t vui32test2;
@@ -119,9 +118,9 @@ const int trigPin = 26; //Ultrasonic Sensor code
 int trigState = LOW;
 const int echoPin = 23;
 float duration;
-float distance;
-unsigned long UScurrentMillis;
-unsigned long USpreviousMillis = 0;
+float distance = 1000;
+unsigned long UScurrentMicros;
+unsigned long USpreviousMicros = 0;
 
 // Declare our SK6812 SMART LED object:
 Adafruit_NeoPixel SmartLEDs(2, 25, NEO_GRB + NEO_KHZ400);
@@ -182,10 +181,7 @@ void setup(){
 
    ucMotorStateIndex = 0;
 
-   ledcAttachPin(windupwheelA, 5); // assign Motors pins to channels
-   ledcAttachPin(windupwheelB, 6);
-   ledcSetup(5, 20000, 8); // 20mS PWM, 8-bit resolution
-   ledcSetup(6, 20000, 8);
+   pinMode(windupwheel, OUTPUT);
 }
 
 void loop(){
@@ -220,34 +216,60 @@ void loop(){
           MoveTo(0, 0, 0);
           trigState = LOW;
           digitalWrite(trigPin,trigState);
-          distance = 0;
+          distance = 1000;
+          ledcWrite(servoChannel, degreesToDutyCycle(180));
        }
      }
     }
   }
   
-  if(ucMotorStateIndex == 9){
-       UScurrentMillis = millis();
-       if(UScurrentMillis - USpreviousMillis >= 1){
-        USpreviousMillis = UScurrentMillis;
-        if(trigState == LOW){
-          trigState = HIGH;
-        } else {
-          trigState = LOW;
-        }
-        digitalWrite(trigPin,trigState);
+  if(ucMotorStateIndex == 7){
+       UScurrentMicros = micros();
+       if((UScurrentMicros - USpreviousMicros >= 2) && (trigState == LOW)){
+        USpreviousMicros = UScurrentMicros;
+        trigState = HIGH;
+        digitalWrite(trigPin, trigState);
        }
-       duration = pulseIn(echoPin, HIGH);
-       distance= duration*0.034/2;
-       
-       if(distance <=20){
+       if((UScurrentMicros - USpreviousMicros >= 10) && (trigState == HIGH)){
+        USpreviousMicros = UScurrentMicros;
+        trigState = LOW;
+        digitalWrite(trigPin, trigState);
+        duration = pulseIn(echoPin, HIGH);
+        distance= duration*0.034/2;
+        //Serial.println(distance);
+       }
+       if(distance <= 20){
               ledcWrite(2,255);
               ledcWrite(1,255);
               ledcWrite(4,255);
               ledcWrite(3,255);
               trigState = LOW;
               digitalWrite(trigPin,trigState);
-              ucMotorStateIndex = 10;
+              ucMotorStateIndex = 8;
+              distance = 0;
+            }
+       }
+       
+    if(ucMotorStateIndex == 12){
+       UScurrentMicros = micros();
+       if((UScurrentMicros - USpreviousMicros >= 2) && (trigState == LOW)){
+        USpreviousMicros = UScurrentMicros;
+        trigState = HIGH;
+        digitalWrite(trigPin, trigState);
+       }
+       if((UScurrentMicros - USpreviousMicros >= 10) && (trigState == HIGH)){
+        USpreviousMicros = UScurrentMicros;
+        trigState = LOW;
+        digitalWrite(trigPin, trigState);
+        duration = pulseIn(echoPin, HIGH);
+        distance= duration*0.034/2;
+        //Serial.println(distance);
+       }
+       if(distance >= 55){ //once it reaches the top it stops **needs debouncing**
+              digitalWrite(windupwheel, LOW);
+              trigState = LOW;
+              digitalWrite(trigPin,trigState);
+              ucMotorStateIndex = 12;
             }
        }
        
@@ -301,7 +323,7 @@ void loop(){
           }
           case 2: //turn right
           {
-            ENC_SetDistance(-30, 30);
+            ENC_SetDistance(-35, 35);
             ucMotorState = 3;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 215;
@@ -310,7 +332,7 @@ void loop(){
           }
           case 3: //go forward again
           {
-            ENC_SetDistance(105, 120);
+            ENC_SetDistance(115, 130);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 215;
@@ -319,7 +341,7 @@ void loop(){
           }
           case 4: //turn left
           {
-            ENC_SetDistance(-30, 30);
+            ENC_SetDistance(-25, 25);
             ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 215;
@@ -332,7 +354,7 @@ void loop(){
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 215;
-            ucMotorStateIndex = 0;
+            ucMotorStateIndex = 6;
             break;
           }
           case 6: //turn left again
@@ -340,39 +362,43 @@ void loop(){
             ENC_SetDistance(-30, 30);
             ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 225;
             ucMotorStateIndex = 7;
             break;
           }
           case 7: //go forward again
           {
-            ENC_SetDistance(470, 300);
+            ENC_SetDistance(20, 20);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 202;
-            ucMotorStateIndex = 8;
+            CR1_ui8RightWheelSpeed = 215;
             break;
           }
-          case 8: //look for beacon
-          {
-            ENC_SetDistance(15, 15);
-            ucMotorState = 2;
-            CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 201;
-            break;
-          }
-          case 9: //go to beacon
-          {
-            ENC_SetDistance(200, 200);
-            ucMotorState = 4;
-            CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 202;
-            break;
-          }
-          case 10: //drop wheel
+          case 8: //drop wheel
           {
             ledcWrite(servoChannel, degreesToDutyCycle(70));
+            ucMotorStateIndex = 9;
+            break;
+          }
+          case 9: //spin 180 degrees
+          {
+            ENC_SetDistance(-60, 60);
+            ucMotorState = 2;
+            CR1_ui8LeftWheelSpeed = 255;
+            CR1_ui8RightWheelSpeed = 215;
+            ucMotorStateIndex = 10;
+            break;
+          }
+          case 10: //initial turn wheel on
+          {
+            digitalWrite(windupwheel, HIGH);
             ucMotorStateIndex = 11;
+            break;
+          }
+          case 11: //angle wheel to climb (needs to be angled at center of mass, but doesn't have the capability with current arm design)
+          {
+            ledcWrite(servoChannel, degreesToDutyCycle(0));
+            ucMotorStateIndex = 12;
             break;
           }
          }
@@ -384,14 +410,22 @@ void loop(){
     }
 
     case 1:
-    {
-      if(CR1_ui8IRDatum == 0x55 && ucMotorStateIndex == 8){
-              ledcWrite(2,255);
-              ledcWrite(1,255);
-              ledcWrite(4,255);
-              ledcWrite(3,255);
-              ucMotorStateIndex = 9;
-            }
+    {   
+       if (distance <= 20) //once it reaches case 7
+       {
+         SmartLEDs.setPixelColor(0,0,25,0);         // make LED1 green with 10% intensity
+         //Serial.println("Green");
+       } 
+       else if (distance >= 50 && ucMotorStateIndex >= 11){
+        SmartLEDs.setPixelColor(0,0,0,25);         // make LED1 blue with 10% intensity
+       }
+       else 
+       {                                       // otherwise
+         SmartLEDs.setPixelColor(0,25,0,0);    // make LED1 red with 10% intensity
+         //Serial.println("Red");
+       }
+       SmartLEDs.show();                       // send updated colour to LEDs
+       
             
       CR1_ucMainTimerCaseCore1 = 2;
       break;
@@ -403,28 +437,8 @@ void loop(){
         MoveTo(ucMotorState, CR1_ui8LeftWheelSpeed,CR1_ui8RightWheelSpeed);
       }
       
-      CR1_ucMainTimerCaseCore1 = 3;
-      
-      break;
-    }
-
-    case 3:
-    {
-      if (CR1_ui8IRDatum == 0x55) {                // if proper character is seen
-         SmartLEDs.setPixelColor(0,0,25,0);         // make LED1 green with 10% intensity
-         //Serial.println("Green");
-       }
-       else if (CR1_ui8IRDatum == 0x41) {           // if "hit" character is seen
-         SmartLEDs.setPixelColor(0,25,0,25);        // make LED1 purple with 10% intensity
-         //Serial.println("Purple");
-       }
-       else {                                       // otherwise
-         SmartLEDs.setPixelColor(0,25,0,0);         // make LED1 red with 10% intensity
-         //Serial.println("Red");
-       }
-       SmartLEDs.show();                            // send updated colour to LEDs
-          
       CR1_ucMainTimerCaseCore1 = 0;
+      
       break;
     }
  }
