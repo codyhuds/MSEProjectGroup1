@@ -238,7 +238,7 @@ void loop(){
         distance= duration*0.034/2;
         //Serial.println(distance);
        }
-       if(distance <= 20){
+       if(distance <= 21){
               ledcWrite(2,255);
               ledcWrite(1,255);
               ledcWrite(4,255);
@@ -250,7 +250,7 @@ void loop(){
             }
        }
        
-    if(ucMotorStateIndex == 12){
+    if(ucMotorStateIndex == 13){
        UScurrentMicros = micros();
        if((UScurrentMicros - USpreviousMicros >= 2) && (trigState == LOW)){
         USpreviousMicros = UScurrentMicros;
@@ -269,7 +269,6 @@ void loop(){
               digitalWrite(windupwheel, LOW);
               trigState = LOW;
               digitalWrite(trigPin,trigState);
-              ucMotorStateIndex = 12;
             }
        }
        
@@ -317,25 +316,25 @@ void loop(){
             ENC_SetDistance(180, 200);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 225;
             ucMotorStateIndex = 2;
             break;
           }
           case 2: //turn right
           {
-            ENC_SetDistance(-35, 35);
+            ENC_SetDistance(-27, 27);
             ucMotorState = 3;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 220;
             ucMotorStateIndex = 3;
             break;
           }
           case 3: //go forward again
           {
-            ENC_SetDistance(115, 130);
+            ENC_SetDistance(135, 150);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 223;
             ucMotorStateIndex = 4;
             break;
           }
@@ -344,22 +343,22 @@ void loop(){
             ENC_SetDistance(-25, 25);
             ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 220;
             ucMotorStateIndex = 5;
             break;
           }
           case 5: //go forward again
           {
-            ENC_SetDistance(180, 200);
+            ENC_SetDistance(290, 300);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 223;
             ucMotorStateIndex = 6;
             break;
           }
           case 6: //turn left again
           {
-            ENC_SetDistance(-30, 30);
+            ENC_SetDistance(-40, 40);
             ucMotorState = 2;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 225;
@@ -368,10 +367,10 @@ void loop(){
           }
           case 7: //go forward again
           {
-            ENC_SetDistance(20, 20);
+            ENC_SetDistance(25, 25);
             ucMotorState = 4;
             CR1_ui8LeftWheelSpeed = 255;
-            CR1_ui8RightWheelSpeed = 215;
+            CR1_ui8RightWheelSpeed = 225;
             break;
           }
           case 8: //drop wheel
@@ -383,7 +382,7 @@ void loop(){
           case 9: //spin 180 degrees
           {
             ENC_SetDistance(-60, 60);
-            ucMotorState = 2;
+            ucMotorState = 3;
             CR1_ui8LeftWheelSpeed = 255;
             CR1_ui8RightWheelSpeed = 215;
             ucMotorStateIndex = 10;
@@ -401,6 +400,11 @@ void loop(){
             ucMotorStateIndex = 12;
             break;
           }
+          case 12: //wait before checking height
+          {
+            ucMotorStateIndex = 13;
+            break;
+          }
          }
        }
   }
@@ -411,7 +415,7 @@ void loop(){
 
     case 1:
     {   
-       if (distance <= 20) //once it reaches case 7
+       if (distance <= 21) //once it reaches case 7
        {
          SmartLEDs.setPixelColor(0,0,25,0);         // make LED1 green with 10% intensity
          //Serial.println("Green");
